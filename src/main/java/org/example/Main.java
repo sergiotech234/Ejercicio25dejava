@@ -1,5 +1,6 @@
 package org.example;
 
+// Importación de JavaFX
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -10,77 +11,155 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+// Importación JDBC
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
+// Clase principal JavaFX
 public class Main extends Application {
 
+    // TableView que mostrará los empleados
     private TableView<Empleado> tableView;
-    private ObservableList<Empleado> empleados = FXCollections.observableArrayList();
 
+    // Lista observable (se actualiza automáticamente en la interfaz)
+    private ObservableList<Empleado> empleados =
+            FXCollections.observableArrayList();
+
+    // Método que inicia la aplicación
     @Override
     public void start(Stage primaryStage) {
 
-        primaryStage.setTitle("Ejemplo JDBC con filtro");
+        // Título de la ventana
+        primaryStage.setTitle(
+                "Ejemplo JDBC con filtro"
+        );
 
+        // Crear tabla
         tableView = new TableView<>();
 
-        // Columnas
-        TableColumn<Empleado, String> nombreCol = new TableColumn<>("Nombre");
-        TableColumn<Empleado, Integer> salarioCol = new TableColumn<>("Salario");
+        // Columna nombre
+        TableColumn<Empleado, String> nombreCol =
+                new TableColumn<>("Nombre");
 
-        nombreCol.setCellValueFactory(new PropertyValueFactory<>("nombre"));
-        salarioCol.setCellValueFactory(new PropertyValueFactory<>("salario"));
+        // Columna salario
+        TableColumn<Empleado, Integer> salarioCol =
+                new TableColumn<>("Salario");
 
-        tableView.getColumns().addAll(nombreCol, salarioCol);
+        // Relacionar columnas con getters del modelo
+        nombreCol.setCellValueFactory(
+                new PropertyValueFactory<>("nombre")
+        );
 
-        // 🔎 Campo de búsqueda
+        salarioCol.setCellValueFactory(
+                new PropertyValueFactory<>("salario")
+        );
+
+        // Añadir columnas a la tabla
+        tableView.getColumns().addAll(
+                nombreCol,
+                salarioCol
+        );
+
+        // Campo de búsqueda
         TextField searchField = new TextField();
-        searchField.setPromptText("Buscar empleado por nombre...");
 
-        // Lista filtrada
-        FilteredList<Empleado> filteredData = new FilteredList<>(empleados, p -> true);
+        searchField.setPromptText(
+                "Buscar empleado por nombre..."
+        );
 
-        // Listener de búsqueda
-        searchField.textProperty().addListener((obs, oldValue, newValue) -> {
+        // Lista filtrada (envuelve la lista original)
+        FilteredList<Empleado> filteredData =
+                new FilteredList<>(empleados, p -> true);
+
+        // Listener: detecta cambios en el texto
+        searchField.textProperty().addListener(
+                (obs, oldValue, newValue) -> {
+
+            // Definir filtro
             filteredData.setPredicate(empleado -> {
-                if (newValue == null || newValue.isEmpty()) {
-                    return true; // mostrar todo
+
+                // Si no hay texto, mostrar todo
+                if (newValue == null ||
+                        newValue.isEmpty()) {
+                    return true;
                 }
 
-                String lowerCaseFilter = newValue.toLowerCase();
+                // Convertir a minúsculas para búsqueda
+                String filter =
+                        newValue.toLowerCase();
 
-                return empleado.getNombre().toLowerCase().contains(lowerCaseFilter);
+                // Filtrar por nombre
+                return empleado.getNombre()
+                        .toLowerCase()
+                        .contains(filter);
             });
         });
 
+        // Conectar tabla con datos filtrados
         tableView.setItems(filteredData);
 
-        VBox vbox = new VBox(10, searchField, tableView);
-        Scene scene = new Scene(vbox, 400, 300);
+        // Layout principal
+        VBox vbox =
+                new VBox(
+                        10,
+                        searchField,
+                        tableView
+                );
 
+        // Crear escena
+        Scene scene =
+                new Scene(vbox, 400, 300);
+
+        // Mostrar ventana
         primaryStage.setScene(scene);
         primaryStage.show();
 
+        // Cargar datos desde la base de datos
         cargarDatos();
     }
 
+    // Método que carga datos desde Oracle
     private void cargarDatos() {
-        String url = "jdbc:oracle:thin:@localhost:1521:xe";
+
+        String url =
+                "jdbc:oracle:thin:@localhost:1521:xe";
+
         String user = "RIBERA";
         String password = "ribera";
 
-        try (Connection conn = DriverManager.getConnection(url, user, password);
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT nombre, salario FROM empleado2")) {
+        try (
 
+            // Conexión a BD
+            Connection conn =
+                    DriverManager.getConnection(
+                            url,
+                            user,
+                            password
+                    );
+
+            // Crear sentencia SQL
+            Statement stmt =
+                    conn.createStatement();
+
+            // Ejecutar consulta
+            ResultSet rs =
+                    stmt.executeQuery(
+                    "SELECT nombre, salario FROM empleado2"
+                    )
+
+        ) {
+
+            // Recorrer resultados
             while (rs.next()) {
-                empleados.add(new Empleado(
-                        rs.getString("nombre"),
-                        rs.getInt("salario")
-                ));
+
+                empleados.add(
+                        new Empleado(
+                                rs.getString("nombre"),
+                                rs.getInt("salario")
+                        )
+                );
             }
 
         } catch (Exception e) {
@@ -88,11 +167,14 @@ public class Main extends Application {
         }
     }
 
+    // Método main
     public static void main(String[] args) {
         launch(args);
     }
 
+    // Clase modelo Empleado
     public static class Empleado {
+
         private final String nombre;
         private final int salario;
 
